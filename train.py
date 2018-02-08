@@ -6,7 +6,7 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict
 
-BATCH_SIZE = 8
+BATCH_SIZE = 32
 TRAIN_FILE = "sub_train.csv"
 TEST_FILE = "train.csv"
 EPOCHS = 2000
@@ -57,6 +57,7 @@ def train_model():
 
         #learning rate
         num_batches_per_epoch = float(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN) / BATCH_SIZE
+        '''
         decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
         lr = tf.train.exponential_decay(
             INITIAL_LEARNING_RATE,
@@ -64,9 +65,9 @@ def train_model():
             100000,
             LEARNING_RATE_DECAY_FACTOR,
             staircase=True)
-
+        '''
         #optimizer
-        optimizer = tf.train.AdamOptimizer(lr).minimize(loss, global_step=global_step)
+        optimizer = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step)
         # TODO: define model saver
 
         # Training session
