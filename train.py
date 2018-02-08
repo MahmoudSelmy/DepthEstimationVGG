@@ -66,6 +66,8 @@ def train_model():
             LEARNING_RATE_DECAY_FACTOR,
             staircase=True)
         '''
+
+        
         #optimizer
         optimizer = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step)
         # TODO: define model saver
