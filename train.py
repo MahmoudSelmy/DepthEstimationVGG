@@ -4,9 +4,9 @@ import tensorflow as tf
 from data_preprocessing import BatchGenerator
 from DepthLoss import build_loss
 from vgg16 import Vgg16Model
-from Utills import output_predict
+from Utills import output_predict,output_groundtruth
 
-BATCH_SIZE = 32
+BATCH_SIZE = 8
 TRAIN_FILE = "sub_train.csv"
 TEST_FILE = "train.csv"
 EPOCHS = 2000
@@ -17,7 +17,7 @@ TARGET_HEIGHT = 55
 TARGET_WIDTH = 74
 
 
-INITIAL_LEARNING_RATE = 0.00001
+INITIAL_LEARNING_RATE = 0.0001
 LEARNING_RATE_DECAY_FACTOR = 0.9
 MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
@@ -67,7 +67,7 @@ def train_model():
             staircase=True)
         '''
 
-        
+
         #optimizer
         optimizer = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step)
         # TODO: define model saver
@@ -92,20 +92,20 @@ def train_model():
             # p = tf.Print(data_file,[data_file],message=)
 
             for epoch in range(EPOCHS):
-                for i in range(45):
+                for i in range(1000):
                     _, loss_value, out_depth, ground_truth, batch_images = sess.run(
                         [optimizer, loss, vgg.outputdepth, train_depths, train_images])
 
                     # validation_loss, _ = sess.run([loss, train_images])
 
 
-                    if i % 10 == 0:
+                    if i % 50 == 0:
                         # log.info('step' + loss_value)
                         print("%s: %d[epoch]: %d[iteration]: train loss %f " % (datetime.now(), epoch, i, loss_value))
 
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
-                    if i == 41:
-                        output_predict(out_depth, batch_images,"data/predictions/predict_scale1_%05d_%05d" % (epoch, i))
+                    if i % 100 == 0:
+                        output_groundtruth(out_depth, ground_truth,"data/predictions/predict_scale1_%05d_%05d" % (epoch, i))
 
             # stop our queue threads and properly close the session
             coord.request_stop()

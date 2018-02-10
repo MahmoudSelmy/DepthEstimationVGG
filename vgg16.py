@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import HelperAPI as helper
 
-output_size = 31 * 30
+output_size = 24 * 24
 
 class Vgg16Model:
     def __init__(self, weights_path='./vgg16.npy'):
@@ -37,8 +37,8 @@ class Vgg16Model:
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable)
-
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512)
+        # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
         # retrain
         self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse =False)
         self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False)
@@ -58,7 +58,7 @@ class Vgg16Model:
 
         self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False)
 
-        self.outputdepth = tf.reshape(self.fc8, [-1, 31, 30, 1])
+        self.outputdepth = tf.reshape(self.fc8, [-1, 24, 24, 1])
 
         self.predictions = tf.nn.softmax(self.fc8, name='predictions')
 
@@ -74,7 +74,7 @@ class Vgg16Model:
         else :
             layer = helper.conv2d(input=layer, filter_size=k_size, number_of_channels=n_channel, number_of_filters=n_filters,
                               padding=self.conv_padding,
-                              max_pool=False,layer_name=name)
+                              max_pool=False,layer_name=name,batch_norm=False)
         return layer
 
     def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024):
@@ -85,6 +85,5 @@ class Vgg16Model:
                                     bias_initializer=tf.constant_initializer(self.weights[name][1], dtype=tf.float32),
                                     use_bias=self.use_bias)
         else:
-            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size,
-                                           dropout=0.5, layer_name=name)
+            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size, layer_name=name)
         return layer

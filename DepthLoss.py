@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-output_size = 31 * 30
+output_size = 24 * 24
 
 def build_loss(scale2_op, depths, pixels_mask):
     # print(pixels_mask.get_shape())
@@ -12,9 +12,11 @@ def build_loss(scale2_op, depths, pixels_mask):
     # print(predictions_all.get_shape())
     # print(pixels_mask.get_shape())
 
-    n =tf.reduce_sum(pixels_mask,1) # all_subset_data images does not have any invalid pixels
+    # n =tf.reduce_sum(pixels_mask,1) # all_subset_data images does not have any invalid pixels
+
     # print("n")
     # print(n.get_shape())
+
     predictions_valid = tf.multiply(predictions_all, pixels_mask)
     target_valid = tf.multiply(depths_all, pixels_mask)
 
@@ -30,6 +32,7 @@ def build_loss(scale2_op, depths, pixels_mask):
     # print(sum_square_d.get_shape())
     sqare_sum_d = tf.square(sum_d)
 
-    cost = tf.reduce_mean( (sum_square_d / n ) - 0.5* (sqare_sum_d / tf.pow(n, 2) ))
-
+    # cost = tf.reduce_mean( (sum_square_d / n ) - 0.5* (sqare_sum_d / tf.pow(n, 2) ))
+    cost = tf.reduce_mean(sum_square_d/output_size)
+    cost = tf.sqrt(cost)
     return cost
