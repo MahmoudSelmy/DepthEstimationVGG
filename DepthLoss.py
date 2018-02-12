@@ -1,6 +1,5 @@
 import tensorflow as tf
-
-
+from math import pow
 output_size = 24 * 24
 
 def build_loss(scale2_op, depths, pixels_mask):
@@ -28,11 +27,13 @@ def build_loss(scale2_op, depths, pixels_mask):
 
     sum_square_d = tf.reduce_sum(square_d, 1)
     # print(sum_square_d.get_shape())
+
     sum_d = tf.reduce_sum(d, 1)
     # print(sum_square_d.get_shape())
+
     sqare_sum_d = tf.square(sum_d)
 
-    # cost = tf.reduce_mean( (sum_square_d / n ) - 0.5* (sqare_sum_d / tf.pow(n, 2) ))
+    # cost = tf.reduce_mean( (sum_square_d / output_size ) - 0.5* (sqare_sum_d / pow(output_size,2) ))
     cost = tf.reduce_mean(sum_square_d/output_size)
     cost = tf.sqrt(cost)
     return cost

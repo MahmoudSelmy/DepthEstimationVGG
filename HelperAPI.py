@@ -7,7 +7,7 @@ def weights_init(shape,layer_name,trainable = True):
 
     Input: shape - list of int numbers which are representing dimensions of our weights.
     '''
-    return tf.Variable(tf.truncated_normal(shape, stddev=0.01),name=layer_name+"_B",trainable=trainable)
+    return tf.Variable(tf.truncated_normal(shape, stddev=0.001),name=layer_name+"_B",trainable=trainable)
 
 
 def bias_init(shape,layer_name,trainable=True):

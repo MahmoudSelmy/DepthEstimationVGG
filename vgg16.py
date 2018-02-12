@@ -37,10 +37,10 @@ class Vgg16Model:
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512)
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
         # retrain
-        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse =False)
+        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse = False)
         self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False)
 
         self.max_pool5 = tf.layers.max_pooling2d(self.conv5_3, (2, 2), (2, 2), padding=self.pool_padding)
@@ -60,7 +60,6 @@ class Vgg16Model:
 
         self.outputdepth = tf.reshape(self.fc8, [-1, 24, 24, 1])
 
-        self.predictions = tf.nn.softmax(self.fc8, name='predictions')
 
 
 

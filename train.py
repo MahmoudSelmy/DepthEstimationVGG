@@ -6,7 +6,7 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 TRAIN_FILE = "sub_train.csv"
 TEST_FILE = "train.csv"
 EPOCHS = 2000
