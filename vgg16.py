@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import HelperAPI as helper
 
-output_size = 24 * 24
+output_size = 30 * 30
 
 class Vgg16Model:
     def __init__(self, weights_path='./vgg16.npy'):
@@ -58,7 +58,7 @@ class Vgg16Model:
 
         self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False)
 
-        self.outputdepth = tf.reshape(self.fc8, [-1, 24, 24, 1])
+        self.outputdepth = tf.reshape(self.fc8, [-1, 30, 30, 1])
 
 
 
