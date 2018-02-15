@@ -12,7 +12,7 @@ class Vgg16Model:
         self.pool_padding = 'SAME'
         self.use_bias = True
 
-    def build(self, input_tensor, trainable=False):
+    def build(self, input_tensor, trainable=False,isTraining=True):
         self.conv1_1 = self.conv2d(input_tensor, 'conv1_1', 64, trainable)
         self.conv1_2 = self.conv2d(self.conv1_1, 'conv1_2', 64, trainable)
 
@@ -40,30 +40,30 @@ class Vgg16Model:
         self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
         # retrain
-        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse = False)
-        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False)
+        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
+        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
 
         self.max_pool5 = tf.layers.max_pooling2d(self.conv5_3, (2, 2), (2, 2), padding=self.pool_padding)
 
         conv_6_s1 = helper.conv2d(input=self.max_pool5, filter_size=1, number_of_channels=512, number_of_filters=128,
                                   padding='VALID',
-                                  max_pool=False, layer_name='conv_6_s1')
+                                  max_pool=False, layer_name='conv_6_s1',isTraining=isTraining)
 
         reshaped = tf.reshape(conv_6_s1, shape=(-1, 7 * 7 * 128))
         shape = reshaped.get_shape()
         n_elements = shape[1:4].num_elements()
 
-        self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False)
-        self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False)
+        self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False,isTraining=isTraining,dropout=0.8)
+        self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.8)
 
-        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False)
+        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False,isTraining=isTraining)
 
         self.outputdepth = tf.reshape(self.fc8, [-1, 30, 30, 1])
 
 
 
 
-    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3):
+    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3,isTraining=True):
         if reuse:
             layer = tf.layers.conv2d(layer, n_filters, kernel_size=(k_size, k_size),
                                 activation=self.activation_fn, padding=self.conv_padding, name=name, trainable=trainable,
@@ -73,10 +73,10 @@ class Vgg16Model:
         else :
             layer = helper.conv2d(input=layer, filter_size=k_size, number_of_channels=n_channel, number_of_filters=n_filters,
                               padding=self.conv_padding,
-                              max_pool=False,layer_name=name,batch_norm=False)
+                              max_pool=False,layer_name=name,batch_norm=True,isTraining=isTraining)
         return layer
 
-    def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024):
+    def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024,isTraining=True,dropout=None):
         if reuse :
             layer = tf.layers.dense(layer, size, activation=self.activation_fn,
                                     name=name, trainable=trainable,
@@ -84,5 +84,5 @@ class Vgg16Model:
                                     bias_initializer=tf.constant_initializer(self.weights[name][1], dtype=tf.float32),
                                     use_bias=self.use_bias)
         else:
-            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size, layer_name=name)
+            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size, layer_name=name,isTraining=isTraining,dropout=dropout)
         return layer

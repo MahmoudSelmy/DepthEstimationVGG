@@ -7,7 +7,7 @@ from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
 BATCH_SIZE = 4
-TRAIN_FILE = "sub_train.csv"
+TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
 
@@ -48,12 +48,12 @@ def train_model():
 
         # build model
         vgg = Vgg16Model()
-
+        isTraining =  tf.placeholder(tf.bool)
         images = tf.placeholder(tf.float32, [None, 224,224,3])
         depths = tf.placeholder(tf.float32, [None, 30,30,1])
         pixels_masks = tf.placeholder(tf.float32, [None, 30,30,1])
 
-        vgg.build(images)
+        vgg.build(images,isTraining=isTraining)
 
         loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
@@ -109,12 +109,13 @@ def train_model():
                     batch_images , ground_truth , batch_masks = sess.run([train_images,train_depths,train_pixels_mask])
 
                     _, loss_value, out_depth, train_summary = sess.run([optimizer, loss, vgg.outputdepth,loss_summary]
-                                                                 ,feed_dict={images:batch_images , depths:ground_truth,pixels_masks:batch_masks})
+                                                                 ,feed_dict={images:batch_images , depths:ground_truth,pixels_masks:batch_masks,isTraining:True})
                     writer_train.add_summary(train_summary, epoch * 1000 + i)
 
-                    batch_images_test, ground_truth_test, batch_masks_test = sess.run([test_images, test_depths, test_pixels_mask])
-                    validation_loss , test_summary = sess.run([loss,loss_summary],feed_dict={images:batch_images_test , depths:ground_truth_test,pixels_masks:batch_masks_test})
-                    writer_test.add_summary(test_summary, epoch * 1000 + i)
+                    if  i%25 ==0:
+                        batch_images_test, ground_truth_test, batch_masks_test = sess.run([test_images, test_depths, test_pixels_mask])
+                        validation_loss , test_summary = sess.run([loss,loss_summary],feed_dict={images:batch_images_test , depths:ground_truth_test,pixels_masks:batch_masks_test,isTraining:False})
+                        writer_test.add_summary(test_summary, epoch * 1000 + i)
 
 
                     if i % 50 == 0:

@@ -6,7 +6,7 @@ TARGET_HEIGHT = 30
 TARGET_WIDTH = 30
 VGG_MEAN = [103.939, 116.779, 123.68]
 TRAIN_FILE = "train.csv"
-TEST_FILE = "train.csv"
+TEST_FILE = "test.csv"
 
 class BatchGenerator:
     def __init__(self, batch_size):
@@ -21,7 +21,7 @@ class BatchGenerator:
     def csv_inputs(self, csv_file_path):
         # print(csv_file_path)
         # list all (image,depth) pairs names and shuffle them
-        filename_queue = tf.train.string_input_producer([csv_file_path], shuffle=False)
+        filename_queue = tf.train.string_input_producer([csv_file_path], shuffle=True)
         # reader to read text files
         reader = tf.TextLineReader()
         # get examples names

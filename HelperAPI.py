@@ -4,7 +4,6 @@ import tensorflow as tf
 def weights_init(shape,layer_name,trainable = True):
     '''
     This function is used when weights are initialized.
-
     Input: shape - list of int numbers which are representing dimensions of our weights.
     '''
     return tf.Variable(tf.truncated_normal(shape, stddev=0.001),name=layer_name+"_B",trainable=trainable)
@@ -20,7 +19,7 @@ def bias_init(shape,layer_name,trainable=True):
 
 
 def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1, 1), padding='SAME',
-                  activation=tf.nn.relu, max_pool=True,batch_norm=True,layer_name ='',trainable=True):
+                  activation=tf.nn.relu, max_pool=True,batch_norm=True,layer_name ='',trainable=True,isTraining=True):
     '''
     This function is used to create single convolution layer in a CNN network.
 
@@ -41,7 +40,7 @@ def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1
 
     layer = tf.nn.conv2d(input, filter=weights, strides=[1, strides[0], strides[1], 1], padding=padding,name=layer_name+'_conv') + biases
     if batch_norm:
-        layer = tf.layers.batch_normalization(layer)
+        layer = tf.layers.batch_normalization(layer,training=isTraining)
     layer = activation(layer)
 
     if max_pool:
@@ -62,7 +61,7 @@ def flatten(layer):
     return reshaped, num_of_elements
 
 
-def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None,layer_name = '',trainable=True):
+def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None,layer_name = '',trainable=True,isTraining=True):
     '''
     This function is used to create single fully connected layer in a network.
 
@@ -82,6 +81,6 @@ def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dro
         layer = activation(layer)
 
     if dropout != None:
-        layer = tf.nn.dropout(layer, dropout)
+        layer = tf.layers.dropout(layer, dropout,training=isTraining)
 
     return layer
