@@ -16,20 +16,23 @@ IMAGE_WIDTH = 224
 TARGET_HEIGHT = 55
 TARGET_WIDTH = 74
 
-
+# decayed_learning_rate = learning_rate * decay_rate ^ (global_step / decay_steps)
 INITIAL_LEARNING_RATE = 0.0001
 LEARNING_RATE_DECAY_FACTOR = 0.9
 MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
 NUM_EPOCHS_PER_DECAY = 30
 
-SCALE1_DIR = 'Scale1'
+Weights_DIR = 'Weights'
 SCALE2_DIR = 'Scale2'
 
 logs_path_train = './tmp/multi_scale/1/train'
 logs_path_test = './tmp/multi_scale/1/test'
 
-def train_model():
+def train_model(continue_flag=False):
+
+    if not gfile.Exists(Weights_DIR):
+        gfile.MakeDirs(Weights_DIR)
 
     with tf.Graph().as_default():
         # get batch
@@ -37,8 +40,8 @@ def train_model():
         with tf.device('/cpu:0'):
             batch_generator = BatchGenerator(batch_size=BATCH_SIZE)
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
-            train_images, train_depths, train_pixels_mask,names = batch_generator.csv_inputs(TRAIN_FILE)
-            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE)
+            train_images, train_depths, train_pixels_mask,names = batch_generator.csv_inputs(TRAIN_FILE,batch_size=4)
+            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE,batch_size=4)
         '''
         # placeholders
             training_images = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 3], name="training_images")
@@ -57,25 +60,60 @@ def train_model():
 
         loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
+        l2_loss = 0
+        training_layers = ['conv5_3', 'conv_6_s1', 'fc6', 'fc7', 'fc8']
+        fine_tuing_layers = ['conv5_1','conv4_3', 'conv4_2','conv5_2']
+
+        trainig_params = []
+        tunning_params = []
+
+        for W in tf.trainable_variables():
+            if "batch_normalization" not in W.name:
+                print(W.name)
+                l2_loss += tf.nn.l2_loss(W)
+            for layer in training_layers:
+                if layer in W.name:
+                    print('train')
+                    trainig_params.append(W)
+                    break
+            for layer in fine_tuing_layers:
+                if layer in W.name:
+                    print('tune')
+                    tunning_params.append(W)
+                    break
+
+        loss +=  0.001 *l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
 
 
         tf.summary.scalar("cost", loss)
         #learning rate
-        num_batches_per_epoch = float(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN) / BATCH_SIZE
-        '''
-        decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-        lr = tf.train.exponential_decay(
+        # num_batches_per_epoch = float(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN) / BATCH_SIZE
+
+
+
+
+
+        # decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
+        lr_train = tf.train.exponential_decay(
             INITIAL_LEARNING_RATE,
             global_step,
-            100000,
-            LEARNING_RATE_DECAY_FACTOR,
+            10000,
+            0.01,
             staircase=True)
-        '''
 
+        lr_tune = tf.train.exponential_decay(
+            1e-6,
+            global_step,
+            10000,
+            0.01,
+            staircase=True)
 
         #optimizer
-        optimizer = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step)
+        optimizer_train = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step,var_list=trainig_params)
+        optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
+                                                                                  var_list=tunning_params)
+        optimizer = tf.group(optimizer_train,optimizer_tune)
         # TODO: define model saver
 
         # Training session
@@ -96,6 +134,32 @@ def train_model():
             writer_test = tf.summary.FileWriter(logs_path_test, graph=sess.graph)
 
             sess.run(tf.global_variables_initializer())
+
+            # Saver
+            # dictionary to each scale to define to seprate collections
+
+            learnable_params = tf.trainable_variables()
+            not_saved_params = ['batch_normalization_3/gamma:0','batch_normalization_4/gamma:0','batch_normalization_5/gamma:0','batch_normalization_3/beta:0','batch_normalization_4/beta:0','batch_normalization_5/beta:0']
+
+            saved_params = []
+            for v in learnable_params:
+                if v.name not in not_saved_params:
+                    saved_params.append(v)
+            # add variables to it's corresponding dictionary
+
+            # define savers
+            saver_learnable = tf.train.Saver(learnable_params, max_to_keep=4)
+            # saver_saved = tf.train.Saver(saved_params, max_to_keep=4)
+            # restore params if we need to continue on the previous training
+            if continue_flag:
+                weights_ckpt = tf.train.get_checkpoint_state(Weights_DIR)
+                if weights_ckpt and weights_ckpt.model_checkpoint_path:
+                    print("Weights Loading.")
+                    saver_learnable.restore(sess, weights_ckpt.model_checkpoint_path)
+                    print("Weights Restored.")
+                else:
+                    print("No Params available")
+
 
             # initialize the queue threads to start to shovel data
             coord = tf.train.Coordinator()
@@ -125,7 +189,8 @@ def train_model():
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
                     if i % 100 == 0:
                         output_groundtruth(out_depth, ground_truth,"data/predictions/predict_scale1_%05d_%05d" % (epoch, i))
-
+                weights_checkpoint_path = Weights_DIR + '/model'
+                saver_learnable.save(sess, weights_checkpoint_path)
             # stop our queue threads and properly close the session
             coord.request_stop()
             coord.join(threads)

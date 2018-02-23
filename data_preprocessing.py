@@ -18,7 +18,7 @@ class BatchGenerator:
 
     '''
 
-    def csv_inputs(self, csv_file_path):
+    def csv_inputs(self, csv_file_path,batch_size=4):
         # print(csv_file_path)
         # list all (image,depth) pairs names and shuffle them
         filename_queue = tf.train.string_input_producer([csv_file_path], shuffle=True)
@@ -45,9 +45,9 @@ class BatchGenerator:
         # generate batch
         images, depths, invalid_depths,image_example = tf.train.batch(
             [image, depth, invalid_depth,image_examples],
-            batch_size=self.batch_size,
+            batch_size=batch_size,
             num_threads=4,
-            capacity=50 + 3 * self.batch_size,
+            capacity=50 + 3 * batch_size,
         )
         return images, depths, invalid_depths,image_example
 

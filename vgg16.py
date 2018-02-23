@@ -37,10 +37,10 @@ class Vgg16Model:
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable)
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable= True)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
         # retrain
-        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
+        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512,isTraining=isTraining)
         self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
 
         self.max_pool5 = tf.layers.max_pooling2d(self.conv5_3, (2, 2), (2, 2), padding=self.pool_padding)
@@ -53,11 +53,10 @@ class Vgg16Model:
         shape = reshaped.get_shape()
         n_elements = shape[1:4].num_elements()
 
-        self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False,isTraining=isTraining,dropout=0.8)
-        self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.8)
+        self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False,isTraining=isTraining,dropout=0.5)
+        self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.5)
 
-        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False,isTraining=isTraining)
-
+        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False,isTraining=isTraining,batch_norm=False)
         self.outputdepth = tf.reshape(self.fc8, [-1, 30, 30, 1])
 
 
@@ -76,7 +75,7 @@ class Vgg16Model:
                               max_pool=False,layer_name=name,batch_norm=True,isTraining=isTraining)
         return layer
 
-    def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024,isTraining=True,dropout=None):
+    def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024,isTraining=True,dropout=None,batch_norm=True):
         if reuse :
             layer = tf.layers.dense(layer, size, activation=self.activation_fn,
                                     name=name, trainable=trainable,
@@ -84,5 +83,5 @@ class Vgg16Model:
                                     bias_initializer=tf.constant_initializer(self.weights[name][1], dtype=tf.float32),
                                     use_bias=self.use_bias)
         else:
-            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size, layer_name=name,isTraining=isTraining,dropout=dropout)
+            layer = helper.fully_connected(input=layer, input_shape=input_size, output_shape=size, layer_name=name,isTraining=isTraining,dropout=dropout,batch_norm=batch_norm)
         return layer

@@ -61,7 +61,7 @@ def flatten(layer):
     return reshaped, num_of_elements
 
 
-def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None,layer_name = '',trainable=True,isTraining=True):
+def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None,layer_name = '',trainable=True,isTraining=True,batch_norm=True):
     '''
     This function is used to create single fully connected layer in a network.
 
@@ -76,6 +76,9 @@ def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dro
     biases = bias_init([output_shape],layer_name=layer_name,trainable=trainable)
 
     layer = tf.matmul(input, weights) + biases
+
+    if batch_norm:
+        layer = tf.layers.batch_normalization(layer,training=isTraining)
 
     if activation != None:
         layer = activation(layer)
