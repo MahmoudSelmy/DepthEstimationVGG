@@ -44,12 +44,12 @@ class Vgg16Model:
         self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
 
         self.max_pool5 = tf.layers.max_pooling2d(self.conv5_3, (2, 2), (2, 2), padding=self.pool_padding)
-
+        '''
         conv_6_s1 = helper.conv2d(input=self.max_pool5, filter_size=1, number_of_channels=512, number_of_filters=128,
                                   padding='VALID',
                                   max_pool=False, layer_name='conv_6_s1',isTraining=isTraining)
-
-        reshaped = tf.reshape(conv_6_s1, shape=(-1, 7 * 7 * 128))
+        '''
+        reshaped = tf.reshape(self.max_pool5, shape=(-1, 7 * 7 * 512))
         shape = reshaped.get_shape()
         n_elements = shape[1:4].num_elements()
 
