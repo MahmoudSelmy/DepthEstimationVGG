@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import HelperAPI as helper
 
-output_size = 30 * 30
+output_size = 24 * 24
 
 class Vgg16Model:
     def __init__(self, weights_path='./vgg16.npy'):

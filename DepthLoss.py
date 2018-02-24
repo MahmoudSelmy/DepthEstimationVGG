@@ -1,6 +1,6 @@
 import tensorflow as tf
 from math import pow
-output_size = 30 * 30
+output_size = 24 * 24
 
 def build_loss(scale2_op, depths, pixels_mask):
     # print(pixels_mask.get_shape())
