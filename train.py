@@ -53,8 +53,8 @@ def train_model(continue_flag=False):
         vgg = Vgg16Model()
         isTraining =  tf.placeholder(tf.bool)
         images = tf.placeholder(tf.float32, [None, 224,224,3])
-        depths = tf.placeholder(tf.float32, [None, 30,30,1])
-        pixels_masks = tf.placeholder(tf.float32, [None, 30,30,1])
+        depths = tf.placeholder(tf.float32, [None, 24,24,1])
+        pixels_masks = tf.placeholder(tf.float32, [None, 24,24,1])
 
         vgg.build(images,isTraining=isTraining)
 
