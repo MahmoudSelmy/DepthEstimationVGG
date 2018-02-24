@@ -31,28 +31,27 @@ class Vgg16Model:
         self.max_pool3 = tf.layers.max_pooling2d(self.conv3_3, (2, 2), (2, 2), padding=self.pool_padding)
 
         self.conv4_1 = self.conv2d(self.max_pool3, 'conv4_1', 512, trainable)
-
-        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512, trainable)
-        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3', 512, trainable)
+        # retrain
+        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512, trainable=True)
+        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3', 512, trainable=True)
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable= True)
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable=True)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
-        # retrain
+
         self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512,isTraining=isTraining)
-        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512, reuse = False,isTraining=isTraining)
+        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512,isTraining=isTraining)
 
         self.max_pool5 = tf.layers.max_pooling2d(self.conv5_3, (2, 2), (2, 2), padding=self.pool_padding)
-        '''
+
         conv_6_s1 = helper.conv2d(input=self.max_pool5, filter_size=1, number_of_channels=512, number_of_filters=128,
                                   padding='VALID',
                                   max_pool=False, layer_name='conv_6_s1',isTraining=isTraining)
-        '''
-        reshaped = tf.reshape(self.max_pool5, shape=(-1, 7 * 7 * 512))
+
+        reshaped = tf.reshape(conv_6_s1, shape=(-1, 7 * 7 * 128))
         shape = reshaped.get_shape()
         n_elements = shape[1:4].num_elements()
-
         self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False,isTraining=isTraining,dropout=0.5)
         self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.5)
 

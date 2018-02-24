@@ -7,7 +7,7 @@ from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
 BATCH_SIZE = 4
-TRAIN_FILE = "train.csv"
+TRAIN_FILE = "sub_train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
 
@@ -17,7 +17,7 @@ TARGET_HEIGHT = 55
 TARGET_WIDTH = 74
 
 # decayed_learning_rate = learning_rate * decay_rate ^ (global_step / decay_steps)
-INITIAL_LEARNING_RATE = 0.0001
+INITIAL_LEARNING_RATE = 0.00001
 LEARNING_RATE_DECAY_FACTOR = 0.9
 MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
@@ -40,7 +40,7 @@ def train_model(continue_flag=False):
         with tf.device('/cpu:0'):
             batch_generator = BatchGenerator(batch_size=BATCH_SIZE)
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
-            train_images, train_depths, train_pixels_mask,names = batch_generator.csv_inputs(TRAIN_FILE,batch_size=4)
+            train_images, train_depths, train_pixels_mask,names = batch_generator.csv_inputs(TRAIN_FILE,batch_size=BATCH_SIZE)
             test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE,batch_size=4)
         '''
         # placeholders
@@ -61,8 +61,8 @@ def train_model(continue_flag=False):
         loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
-        training_layers = ['conv5_3', 'conv_6_s1', 'fc6', 'fc7', 'fc8']
-        fine_tuing_layers = ['conv5_1','conv4_3', 'conv4_2','conv5_2']
+        training_layers = ['conv_6_s1', 'fc6', 'fc7', 'fc8']
+        fine_tuing_layers = ['conv5_1','conv4_3', 'conv4_2','conv5_2','conv5_3']
 
         trainig_params = []
         tunning_params = []
@@ -82,7 +82,7 @@ def train_model(continue_flag=False):
                     tunning_params.append(W)
                     break
 
-        loss +=  0.001 *l2_loss
+        loss +=  0.02 *l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
 
 
@@ -96,7 +96,7 @@ def train_model(continue_flag=False):
 
         # decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
         lr_train = tf.train.exponential_decay(
-            INITIAL_LEARNING_RATE,
+            1e-3,
             global_step,
             10000,
             0.01,
@@ -110,9 +110,8 @@ def train_model(continue_flag=False):
             staircase=True)
 
         #optimizer
-        optimizer_train = tf.train.AdamOptimizer(learning_rate=INITIAL_LEARNING_RATE).minimize(loss, global_step=global_step,var_list=trainig_params)
-        optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
-                                                                                  var_list=tunning_params)
+        optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
+        optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
         optimizer = tf.group(optimizer_train,optimizer_tune)
         # TODO: define model saver
 
