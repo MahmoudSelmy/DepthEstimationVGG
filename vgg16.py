@@ -56,7 +56,7 @@ class Vgg16Model:
         self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.5)
 
         self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False,isTraining=isTraining,batch_norm=False)
-        self.outputdepth = tf.reshape(self.fc8, [-1, 30, 30, 1])
+        self.outputdepth = tf.reshape(self.fc8, [-1, 24, 24, 1])
 
 
 

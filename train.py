@@ -41,7 +41,7 @@ def train_model(continue_flag=False):
             batch_generator = BatchGenerator(batch_size=BATCH_SIZE)
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
             train_images, train_depths, train_pixels_mask,names = batch_generator.csv_inputs(TRAIN_FILE,batch_size=BATCH_SIZE)
-            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE,batch_size=4)
+            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE)
         '''
         # placeholders
             training_images = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 3], name="training_images")
