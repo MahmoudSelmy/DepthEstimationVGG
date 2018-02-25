@@ -6,7 +6,7 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
@@ -61,7 +61,7 @@ def train_model(continue_flag=False):
         loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
-        training_layers = ['conv_6_s1', 'fc6', 'fc7', 'fc8']
+        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8']
         fine_tuing_layers = ['conv5_1','conv4_3', 'conv4_2','conv5_2','conv5_3']
 
         trainig_params = []
@@ -82,7 +82,7 @@ def train_model(continue_flag=False):
                     tunning_params.append(W)
                     break
 
-        loss +=  0.02 *l2_loss
+        loss +=  1e-4 * l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
 
 
@@ -96,17 +96,17 @@ def train_model(continue_flag=False):
 
         # decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
         lr_train = tf.train.exponential_decay(
-            1e-3,
+            1e-5,
             global_step,
-            10000,
-            0.01,
+            5000,
+            0.1,
             staircase=True)
 
         lr_tune = tf.train.exponential_decay(
-            1e-6,
+            1e-5,
             global_step,
-            10000,
-            0.01,
+            5000,
+            0.1,
             staircase=True)
 
         #optimizer
@@ -142,19 +142,19 @@ def train_model(continue_flag=False):
 
             saved_params = []
             for v in learnable_params:
-                if v.name not in not_saved_params:
+                if 'batch_normalization' not in v.name:
                     saved_params.append(v)
             # add variables to it's corresponding dictionary
 
             # define savers
             saver_learnable = tf.train.Saver(learnable_params, max_to_keep=4)
-            # saver_saved = tf.train.Saver(saved_params, max_to_keep=4)
+            saver_saved = tf.train.Saver(saved_params, max_to_keep=4)
             # restore params if we need to continue on the previous training
             if continue_flag:
                 weights_ckpt = tf.train.get_checkpoint_state(Weights_DIR)
                 if weights_ckpt and weights_ckpt.model_checkpoint_path:
                     print("Weights Loading.")
-                    saver_learnable.restore(sess, weights_ckpt.model_checkpoint_path)
+                    saved_params.restore(sess, weights_ckpt.model_checkpoint_path)
                     print("Weights Restored.")
                 else:
                     print("No Params available")
@@ -175,18 +175,18 @@ def train_model(continue_flag=False):
                                                                  ,feed_dict={images:batch_images , depths:ground_truth,pixels_masks:batch_masks,isTraining:True})
                     writer_train.add_summary(train_summary, epoch * 1000 + i)
 
-                    if  i%25 ==0:
+                    if  i%10 ==0:
                         batch_images_test, ground_truth_test, batch_masks_test = sess.run([test_images, test_depths, test_pixels_mask])
                         validation_loss , test_summary = sess.run([loss,loss_summary],feed_dict={images:batch_images_test , depths:ground_truth_test,pixels_masks:batch_masks_test,isTraining:False})
                         writer_test.add_summary(test_summary, epoch * 1000 + i)
 
 
-                    if i % 50 == 0:
+                    if i % 10 == 0:
                         # log.info('step' + loss_value)
                         print("%s: %d[epoch]: %d[iteration]: train loss %f : valid loss %f " % (datetime.now(), epoch, i, loss_value,validation_loss))
 
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
-                    if i % 100 == 0:
+                    if i % 500 == 0:
                         output_groundtruth(out_depth, ground_truth,"data/predictions/predict_scale1_%05d_%05d" % (epoch, i))
                 weights_checkpoint_path = Weights_DIR + '/model'
                 saver_learnable.save(sess, weights_checkpoint_path)
@@ -196,7 +196,7 @@ def train_model(continue_flag=False):
             sess.close()
 
 def main(argv=None):
-    train_model()
+    train_model(True)
 
 if __name__ == '__main__':
     tf.app.run()

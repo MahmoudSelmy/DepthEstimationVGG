@@ -32,12 +32,12 @@ class Vgg16Model:
 
         self.conv4_1 = self.conv2d(self.max_pool3, 'conv4_1', 512, trainable)
         # retrain
-        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512, trainable=True)
-        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3', 512, trainable=True)
+        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512,isTraining=isTraining)
+        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3', 512,isTraining=isTraining)
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable=True)
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512,isTraining=isTraining)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
 
         self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512,isTraining=isTraining)
@@ -47,27 +47,35 @@ class Vgg16Model:
 
         conv_6_s1 = helper.conv2d(input=self.max_pool5, filter_size=1, number_of_channels=512, number_of_filters=128,
                                   padding='VALID',
-                                  max_pool=False, layer_name='conv_6_s1',isTraining=isTraining)
+                                  max_pool=False, layer_name='conv_6_s1', isTraining=isTraining)
 
         reshaped = tf.reshape(conv_6_s1, shape=(-1, 7 * 7 * 128))
         shape = reshaped.get_shape()
         n_elements = shape[1:4].num_elements()
-        self.fc6 = self.fc(reshaped, 'fc6', size=4096,input_size=n_elements,reuse =False,isTraining=isTraining,dropout=0.5)
-        self.fc7 = self.fc(self.fc6, 'fc7', size=4096,input_size=4096, reuse =False,isTraining=isTraining,dropout=0.5)
+        self.fc6 = self.fc(reshaped, 'fc6', size=4096, input_size=n_elements, reuse=False, isTraining=isTraining,
+                           dropout=0.5)
+        self.fc7 = self.fc(self.fc6, 'fc7', size=4096, input_size=4096, reuse=False, isTraining=isTraining, dropout=0.5)
 
-        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size,input_size=4096, reuse =False,isTraining=isTraining,batch_norm=False)
+        self.fc8 = self.fc(self.fc7, 'fc8', size=output_size, input_size=4096, reuse=False, isTraining=isTraining,
+                           batch_norm=False)
         self.outputdepth = tf.reshape(self.fc8, [-1, 24, 24, 1])
 
 
 
 
-    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3,isTraining=True):
+
+
+    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3,isTraining=True,batch_norm=True):
         if reuse:
             layer = tf.layers.conv2d(layer, n_filters, kernel_size=(k_size, k_size),
-                                activation=self.activation_fn, padding=self.conv_padding, name=name, trainable=trainable,
+                                padding=self.conv_padding, name=name, trainable=trainable,
                                 kernel_initializer=tf.constant_initializer(self.weights[name][0], dtype=tf.float32),
                                 bias_initializer=tf.constant_initializer(self.weights[name][1], dtype=tf.float32),
                                 use_bias=self.use_bias)
+            if batch_norm :
+                layer = tf.layers.batch_normalization(layer,training=isTraining)
+            layer = self.activation_fn(layer)
+
         else :
             layer = helper.conv2d(input=layer, filter_size=k_size, number_of_channels=n_channel, number_of_filters=n_filters,
                               padding=self.conv_padding,
