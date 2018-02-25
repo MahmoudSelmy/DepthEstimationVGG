@@ -6,7 +6,7 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
@@ -154,7 +154,7 @@ def train_model(continue_flag=False):
                 weights_ckpt = tf.train.get_checkpoint_state(Weights_DIR)
                 if weights_ckpt and weights_ckpt.model_checkpoint_path:
                     print("Weights Loading.")
-                    saved_params.restore(sess, weights_ckpt.model_checkpoint_path)
+                    saver_saved.restore(sess, weights_ckpt.model_checkpoint_path)
                     print("Weights Restored.")
                 else:
                     print("No Params available")
