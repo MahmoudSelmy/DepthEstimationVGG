@@ -28,4 +28,4 @@ Note : the provided output samples are predicted by the Up-Conv implementation
 
 ### Conclusion
 
-I've used only 1449 image-depthmaps pairs during this fine-tuning process, I think getting more data we help to significantly improve my results
+I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results
