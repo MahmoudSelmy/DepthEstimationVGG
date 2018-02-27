@@ -61,15 +61,16 @@ def train_model(continue_flag=False):
         loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
-        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8']
+        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8','batch_normalization']
         fine_tuing_layers = ['conv5_1','conv4_3', 'conv4_2','conv5_2','conv5_3']
 
         trainig_params = []
         tunning_params = []
 
         for W in tf.trainable_variables():
+            print(W.name)
             if "batch_normalization" not in W.name:
-                print(W.name)
+                print('L2')
                 l2_loss += tf.nn.l2_loss(W)
             for layer in training_layers:
                 if layer in W.name:
@@ -96,7 +97,7 @@ def train_model(continue_flag=False):
 
         # decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
         lr_train = tf.train.exponential_decay(
-            1e-5,
+            1e-4,
             global_step,
             5000,
             0.1,
@@ -196,7 +197,7 @@ def train_model(continue_flag=False):
             sess.close()
 
 def main(argv=None):
-    train_model(True)
+    train_model()
 
 if __name__ == '__main__':
     tf.app.run()
