@@ -19,7 +19,7 @@ I've used the NYU Depth V2 dataset.
 ### Training
 For the FC Implementation : I am working on it, but currently i am stucked at 0.15 RMSE on training data and 0.45 RMSE on validation data.
 
-For the Up-Conv Implementation "I will add it's implementation soon in a seprate repo" : I've reached a 0.109 RMSE on Training data and a 0.165 on Validation data. 
+For the Up-Conv Implementation : I've reached a 0.109 RMSE on Training data and a 0.165 on Validation data. 
 
 ### Output
 ![img_1](./output.png)
