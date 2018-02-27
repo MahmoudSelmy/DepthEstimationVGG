@@ -42,5 +42,12 @@ Note : I've already implemented this paper. ["**DeeperDepthEstimation**,"
 
 ![img_1](./up_projection.png)
 
+### Future Work
+
+1) I will collect more NYU-Depth V2 data by extracting them from the provided raw data.
+2) I will train my model on AWS to get more powerful resources.
+3) I will try to predict larger depth map.
+4) I will add the gradient at the x and y directions in order to reduce sudden changes in depth , This idea was introduced into     ["*Predicting Depth, Surface Normals and Semantic Labels with a Common Multi-Scale Convolutional Architecture**," 
+](https://arxiv.org/abs/1411.4734) NIPS 2015.
 
 
