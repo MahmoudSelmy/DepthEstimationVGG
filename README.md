@@ -37,3 +37,7 @@ Note : This block was introduced at ["**Depth from a Single Image by Harmonizing
 
 ![img_1](./up_projection.png)
 
+
+ Some tricks as the 1*1 conv can make life easier and training faster while preserving most of the model's capcity
+
+
