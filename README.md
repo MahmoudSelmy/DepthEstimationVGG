@@ -28,11 +28,11 @@ Note : the provided output samples are predicted by the Up-Conv implementation
 
 ### Conclusion
 
-1) I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results.
+I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results.
 
-2) Some tricks as the 1*1 conv can make life easier and training faster while preserving most of the model's capcity
+Some tricks as the 1*1 conv can make life easier and training faster while preserving most of the model's capcity
  
-3) Using Upsampling to upsize the last feature map makes it sparse "Around 75% of the weights are zeros" , I think using this Up-Projection block to Up-Sample the last feature map will help. 
+Using Upsampling to upsize the last feature map makes it sparse "Around 75% of the weights are zeros" , I think using this Up-Projection block to Up-Sample the last feature map will help. 
 
 Note : This block was introduced into ["**Depth from a Single Image by Harmonizing Overcomplete Local Network Predictions**," 
 ](https://arxiv.org/abs/1605.07081) NIPS 2016.
@@ -41,8 +41,6 @@ Note : I've already implemented this paper. ["**DeeperDepthEstimation**,"
 ](https://github.com/MahmoudSelmy/DeeperDepthEstimation)
 
 ![img_1](./up_projection.png)
-
-
 
 
 
