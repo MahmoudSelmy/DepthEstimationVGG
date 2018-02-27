@@ -4,7 +4,7 @@
 This repository contains a set of python scripts to fine-tune a vgg16 model in order to do real-time depth estimation task
 
 ### Network Architecture
-I've added a 1*1 conv in order to reduce the number of channels of the last conv layer from 512 to 128.This reduce the model size in order to make it fit in my poor GPU [2GB].
+I've added a 1*1 conv in order to reduce the number of channels of the last conv layer from 512 to 128.This reduces the model size in order to make it fit in my poor GPU [2GB].
 
 ![img_1](./Arch.png)
 
@@ -28,4 +28,11 @@ Note : the provided output samples are predicted by the Up-Conv implementation
 
 ### Conclusion
 
-I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results
+I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results.
+
+Using Upsampling to upsize the last feature map makes it sparse "Around 75% of the weights are zeros" , I think using this block will help. 
+This block was introduced at ["**Depth from a Single Image by Harmonizing Overcomplete Local Network Predictions**," 
+](https://arxiv.org/abs/1605.07081) NIPS 2016.
+
+![img_1](./up_projection.png)
+
