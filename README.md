@@ -30,8 +30,9 @@ Note : the provided output samples are predicted by the Up-Conv implementation
 
 I've used only 1449 image-depthmap pairs during this fine-tuning process, I think getting more data will help me to significantly improve my results.
 
-Using Upsampling to upsize the last feature map makes it sparse "Around 75% of the weights are zeros" , I think using this block will help. 
-This block was introduced at ["**Depth from a Single Image by Harmonizing Overcomplete Local Network Predictions**," 
+Using Upsampling to upsize the last feature map makes it sparse "Around 75% of the weights are zeros" , I think using this Up-Projection block to Up-Sample the last feature map will help. 
+
+Note : This block was introduced at ["**Depth from a Single Image by Harmonizing Overcomplete Local Network Predictions**," 
 ](https://arxiv.org/abs/1605.07081) NIPS 2016.
 
 ![img_1](./up_projection.png)
