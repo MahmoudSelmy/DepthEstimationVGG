@@ -25,3 +25,7 @@ For the Up-Conv Implementation : I've reached a 0.109 RMSE on Training data and 
 ![img_1](./output.png)
 
 Note : the provided output samples are predicted by the Up-Conv implementation
+
+### Conclusion
+
+I've used only 1449 image-depthmaps pairs during this fine-tuning process, I think getting more data we help to significantly improve my results
