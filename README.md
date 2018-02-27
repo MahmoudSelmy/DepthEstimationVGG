@@ -5,11 +5,11 @@ This repository contains a set of python scripts to fine-tune a vgg16 model in o
 ### Network Architecture
 I've added a 1*1 conv in order to reduce the number of channels of the last conv layer from 512 to 128.This reduce the model size in order to make it fit in my poor GPU [2GB].
 
-![img_1](./arch.png)
+![img_1](./Arch.png)
 
 Note: I think implementing a FC-Layers is an improper approach to do this task instead i am currently training a model using a simple Up-Conv technique.
-I've added a Scale-Invarient Loss because i think learning relative depth estimation is much easier,It's just a gut feeling.
 
+I've added a Scale-Invarient Loss because i think learning relative depth estimation is much easier,It's just a gut feeling.
 ![img_1](./loss.png)
 
 ### Dataset
