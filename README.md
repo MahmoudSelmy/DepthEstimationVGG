@@ -10,7 +10,7 @@ I've added a 1*1 conv in order to reduce the number of channels of the last conv
 
 Note: I think implementing a FC-Layers is an improper approach to do this task instead i am currently training a model using a simple Up-Conv technique , I've got that feeling after several failed training sessions and the FC-layers are discriminative by its' nature.
 
-I've added a Scale-Invarient Loss because i think learning relative depth estimation is much easier,It's just a gut feeling.
+I've added a Scale-Invarient Loss because i think learning relative depth estimation is much easier.
 ![img_1](./loss.png)
 
 ### Dataset
