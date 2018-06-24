@@ -1,4 +1,10 @@
-data\nyu_datasets\00749.jpg,data\nyu_datasets\00749.png
-data\nyu_datasets\00754.jpg,data\nyu_datasets\00754.png
-data\nyu_datasets\00466.jpg,data\nyu_datasets\00466.png
-data\nyu_datasets\01255.jpg,data\nyu_datasets\01255.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0018\15-deg-right\00194.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0018\15-deg-right\00194.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0020\fog\00510.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0020\fog\00510.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0002\clone\00087.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0002\clone\00087.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0001\morning\00131.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0001\morning\00131.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0001\30-deg-left\00363.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0001\30-deg-left\00363.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0006\15-deg-right\00098.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0006\15-deg-right\00098.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0018\fog\00055.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0018\fog\00055.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0020\clone\00836.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0020\clone\00836.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0020\30-deg-left\00822.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0020\30-deg-left\00822.png
+G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_rgb\0001\fog\00147.png,G:\GP\Datasets\vkitti_1.3.1_rgb\vkitti_1.3.1_depthgt\0001\fog\00147.png

@@ -6,7 +6,7 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict,output_groundtruth
 
-BATCH_SIZE = 16
+BATCH_SIZE = 12
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
@@ -22,6 +22,8 @@ LEARNING_RATE_DECAY_FACTOR = 0.9
 MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
 NUM_EPOCHS_PER_DECAY = 30
+
+no_iterations = 21100//BATCH_SIZE + 1
 
 Weights_DIR = 'Weights'
 SCALE2_DIR = 'Scale2'
@@ -51,7 +53,7 @@ def train_model(continue_flag=False):
 
         # build model
         vgg = Vgg16Model()
-        isTraining =  tf.placeholder(tf.bool)
+        isTraining = tf.placeholder(tf.bool)
         images = tf.placeholder(tf.float32, [None, 224,224,3])
         depths = tf.placeholder(tf.float32, [None, 24,24,1])
         pixels_masks = tf.placeholder(tf.float32, [None, 24,24,1])
@@ -99,14 +101,14 @@ def train_model(continue_flag=False):
         lr_train = tf.train.exponential_decay(
             1e-4,
             global_step,
-            5000,
+            2*no_iterations,
             0.1,
             staircase=True)
 
         lr_tune = tf.train.exponential_decay(
-            1e-5,
+            1e-4,
             global_step,
-            5000,
+            2*no_iterations,
             0.1,
             staircase=True)
 
@@ -114,6 +116,7 @@ def train_model(continue_flag=False):
         optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
         optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
         optimizer = tf.group(optimizer_train,optimizer_tune)
+        # optimizer = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss)
         # TODO: define model saver
 
         # Training session
@@ -168,18 +171,18 @@ def train_model(continue_flag=False):
             # p = tf.Print(data_file,[data_file],message=)
 
             for epoch in range(EPOCHS):
-                for i in range(1000):
+                for i in range(no_iterations):
 
                     batch_images , ground_truth , batch_masks = sess.run([train_images,train_depths,train_pixels_mask])
 
                     _, loss_value, out_depth, train_summary = sess.run([optimizer, loss, vgg.outputdepth,loss_summary]
                                                                  ,feed_dict={images:batch_images , depths:ground_truth,pixels_masks:batch_masks,isTraining:True})
-                    writer_train.add_summary(train_summary, epoch * 1000 + i)
+                    writer_train.add_summary(train_summary, epoch * no_iterations + i)
 
                     if  i%10 ==0:
                         batch_images_test, ground_truth_test, batch_masks_test = sess.run([test_images, test_depths, test_pixels_mask])
-                        validation_loss , test_summary = sess.run([loss,loss_summary],feed_dict={images:batch_images_test , depths:ground_truth_test,pixels_masks:batch_masks_test,isTraining:False})
-                        writer_test.add_summary(test_summary, epoch * 1000 + i)
+                        validation_loss , test_summary,out_depth_test = sess.run([loss,loss_summary,vgg.outputdepth],feed_dict={images:batch_images_test , depths:ground_truth_test,pixels_masks:batch_masks_test,isTraining:False})
+                        writer_test.add_summary(test_summary, epoch * no_iterations + i)
 
 
                     if i % 10 == 0:
@@ -188,7 +191,9 @@ def train_model(continue_flag=False):
 
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
                     if i % 500 == 0:
-                        output_groundtruth(out_depth, ground_truth,"data/predictions/predict_scale1_%05d_%05d" % (epoch, i))
+                        output_groundtruth(out_depth, ground_truth,"data/predictions/train/out_%05d_%05d" % (epoch, i))
+                        output_groundtruth(out_depth_test, ground_truth_test,
+                                           "data/predictions/test/output_%05d_%05d" % (epoch, i))
                 weights_checkpoint_path = Weights_DIR + '/model'
                 saver_learnable.save(sess, weights_checkpoint_path)
             # stop our queue threads and properly close the session

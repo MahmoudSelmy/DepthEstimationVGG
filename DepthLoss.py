@@ -23,17 +23,18 @@ def build_loss(scale2_op, depths, pixels_mask):
     # print(target_valid.get_shape())
 
     d = tf.subtract(predictions_valid, target_valid)
-    square_d = tf.square(d)
+    # square_d = tf.square(d)
 
-    sum_square_d = tf.reduce_sum(square_d, 1)
+    # sum_square_d = tf.reduce_sum(square_d, 1)
     # print(sum_square_d.get_shape())
 
-    sum_d = tf.reduce_sum(d, 1)
+    # sum_d = tf.reduce_sum(d, 1)
     # print(sum_square_d.get_shape())
 
-    sqare_sum_d = tf.square(sum_d)
+    # sqare_sum_d = tf.square(sum_d)
 
-    cost = tf.reduce_mean( (sum_square_d / output_size ) - 0.5* (sqare_sum_d / pow(output_size,2) ))
+    cost = tf.reduce_mean(tf.abs(d))
+    # cost = tf.reduce_mean( (sum_square_d / output_size ) - 0.5* (sqare_sum_d / pow(output_size,2) ))
     # cost = tf.reduce_mean(sum_square_d/output_size)
     cost = tf.sqrt(cost)
     return cost

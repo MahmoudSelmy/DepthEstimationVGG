@@ -15,7 +15,7 @@ def bias_init(shape,layer_name,trainable=True):
 
     Input: shape - scalar that represents length of bias vector for particular layer in a network.
     '''
-    return tf.Variable(tf.constant(0.05, shape=shape),name=layer_name+"_W",trainable=trainable)
+    return tf.Variable(tf.constant(0.0, shape=shape),name=layer_name+"_W",trainable=trainable)
 
 
 def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1, 1), padding='SAME',
@@ -40,7 +40,7 @@ def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1
 
     layer = tf.nn.conv2d(input, filter=weights, strides=[1, strides[0], strides[1], 1], padding=padding,name=layer_name+'_conv') + biases
     if batch_norm:
-        layer = tf.layers.batch_normalization(layer,training=isTraining)
+        layer = tf.keras.layers.BatchNormalization()(layer, training=isTraining)
     layer = activation(layer)
 
     if max_pool:

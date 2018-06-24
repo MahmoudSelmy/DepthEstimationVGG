@@ -32,24 +32,33 @@ class Vgg16Model:
 
         self.conv4_1 = self.conv2d(self.max_pool3, 'conv4_1', 512, trainable)
         # retrain
-        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512,isTraining=isTraining)
-        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3', 512, trainable=True,isTraining=isTraining)
+        self.conv4_2 = self.conv2d(self.conv4_1, 'conv4_2', 512,isTraining=isTraining,trainable=True)
+        self.conv4_3 = self.conv2d(self.conv4_2, 'conv4_3',  n_channel= 512 ,n_filters=512,batch_norm=True, trainable=True,isTraining=isTraining,reuse=False)
 
         self.max_pool4 = tf.layers.max_pooling2d(self.conv4_3, (2, 2), (2, 2), padding=self.pool_padding)
 
-        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', 512, trainable=True,isTraining=isTraining)
+        self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1',  n_channel= 512 ,n_filters=512, trainable=True,isTraining=isTraining,reuse=False)
         # self.conv5_1 = self.conv2d(self.max_pool4, 'conv5_1', n_channel= 512 ,n_filters=512, reuse =False)
 
-        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512,isTraining=isTraining)
-        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512,isTraining=isTraining)
+        self.conv5_2 = self.conv2d(self.conv5_1, 'conv5_2', n_channel= 512 ,n_filters=512,isTraining=isTraining,reuse=False)
+        self.conv5_3 = self.conv2d(self.conv5_2, 'conv5_3', n_channel= 512 ,n_filters=512,isTraining=isTraining,reuse=False,batch_norm=True)
 
         self.up_sample = tf.keras.layers.UpSampling2D(size=(3,3),input_shape=(1,14,14))(self.conv5_3)
+        print(self.up_sample.shape)
 
         self.pad = tf.keras.layers.ZeroPadding2D(padding=((4,4),(4,4)))(self.up_sample)
+        print(self.pad.shape)
 
-        self.outputdepth = helper.conv2d(input=self.pad, filter_size=3, number_of_channels=512, number_of_filters=1,
-                                  padding='VALID',
-                                  max_pool=True, layer_name='conv_Pred',batch_norm=False,isTraining=isTraining)
+        self.pred_conv = helper.conv2d(input=self.pad, filter_size=3, number_of_channels=512, number_of_filters=512,
+                                  padding='SAME',
+                                  max_pool=False, layer_name='conv_Pred',batch_norm=False,isTraining=isTraining)
+        self.pred_conv2 = helper.conv2d(input=self.pred_conv, filter_size=3, number_of_channels=512, number_of_filters=1,
+                                       padding='VALID',
+                                       max_pool=False, layer_name='conv_Pred2', batch_norm=False, isTraining=isTraining)
+        print(self.pred_conv.shape)
+        self.outputdepth = tf.layers.max_pooling2d(self.pred_conv2, (2, 2), (2, 2), padding=self.pool_padding)
+
+        print(self.outputdepth.shape)
 
 
 
@@ -57,7 +66,7 @@ class Vgg16Model:
 
 
 
-    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3,isTraining=True,batch_norm=True):
+    def conv2d(self, layer, name, n_filters, trainable=True, k_size=3,reuse = True,n_channel=3,isTraining=True,batch_norm=False):
         if reuse:
             layer = tf.layers.conv2d(layer, n_filters, kernel_size=(k_size, k_size),
                                 padding=self.conv_padding, name=name, trainable=trainable,
@@ -66,13 +75,14 @@ class Vgg16Model:
                                 use_bias=self.use_bias)
             if batch_norm:
                 print('norm' + name)
-                layer = tf.layers.batch_normalization(layer,training=isTraining)
+                #layer = tf.layers.batch_normalization(layer,training=isTraining)
+                layer = tf.keras.layers.BatchNormalization()(layer,training= isTraining)
             layer = self.activation_fn(layer)
 
         else :
             layer = helper.conv2d(input=layer, filter_size=k_size, number_of_channels=n_channel, number_of_filters=n_filters,
                               padding=self.conv_padding,
-                              max_pool=False,layer_name=name,batch_norm=True,isTraining=isTraining)
+                              max_pool=False,layer_name=name,batch_norm=batch_norm,isTraining=isTraining)
         return layer
 
     def fc(self, layer, name, size, trainable=True,reuse=True,input_size = 1024,isTraining=True,dropout=None,batch_norm=True):
