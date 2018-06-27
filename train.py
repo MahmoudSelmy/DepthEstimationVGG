@@ -44,7 +44,7 @@ def train_model(continue_flag=False):
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
             train_images, train_depths, train_pixels_mask, names = batch_generator.csv_inputs(TRAIN_FILE,
                                                                                               batch_size=BATCH_SIZE)
-            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE, batch_size=4)
+            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE, batch_size=16)
         '''
         # placeholders
             training_images = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 3], name="training_images")
@@ -113,12 +113,14 @@ def train_model(continue_flag=False):
             staircase=True)
 
         # optimizer
-        optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
-                                                                                  var_list=trainig_params)
-        optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
-                                                                                var_list=tunning_params)
-        optimizer = tf.group(optimizer_train, optimizer_tune)
-        # optimizer = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
+                                                                                      var_list=trainig_params)
+            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
+                                                                                    var_list=tunning_params)
+            optimizer = tf.group(optimizer_train, optimizer_tune)
+            # optimizer = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss)
         # TODO: define model saver
 
         # Training session

@@ -75,8 +75,8 @@ class Vgg16Model:
                                 use_bias=self.use_bias)
             if batch_norm:
                 print('norm' + name)
-                #layer = tf.layers.batch_normalization(layer,training=isTraining)
-                layer = tf.keras.layers.BatchNormalization()(layer,training= isTraining)
+                layer = tf.layers.batch_normalization(layer,training=isTraining)
+                # layer = tf.keras.layers.BatchNormalization(trainable=isTraining)(layer, isTraining=True)
             layer = self.activation_fn(layer)
 
         else :
