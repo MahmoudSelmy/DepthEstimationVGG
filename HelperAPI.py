@@ -1,25 +1,26 @@
 import tensorflow as tf
 
+
 # TODO : add layer and parameters name parameter
-def weights_init(shape,layer_name,trainable = True):
+def weights_init(shape, layer_name, trainable=True):
     '''
     This function is used when weights are initialized.
     Input: shape - list of int numbers which are representing dimensions of our weights.
     '''
-    return tf.Variable(tf.truncated_normal(shape, stddev=0.01,mean=0.0),name=layer_name+"_B",trainable=trainable)
+    return tf.Variable(tf.truncated_normal(shape, stddev=0.01, mean=0.0), name=layer_name + "_B", trainable=trainable)
 
 
-def bias_init(shape,layer_name,trainable=True):
+def bias_init(shape, layer_name, trainable=True):
     '''
     This function is used when biases are initialized.
 
     Input: shape - scalar that represents length of bias vector for particular layer in a network.
     '''
-    return tf.Variable(tf.constant(0.0, shape=shape),name=layer_name+"_W",trainable=trainable)
+    return tf.Variable(tf.constant(0.0, shape=shape), name=layer_name + "_W", trainable=trainable)
 
 
 def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1, 1), padding='SAME',
-                  activation=tf.nn.relu, max_pool=True,batch_norm=True,layer_name ='',trainable=True,isTraining=True):
+           activation=tf.nn.relu, max_pool=True, batch_norm=True, layer_name='', trainable=True, isTraining=True):
     '''
     This function is used to create single convolution layer in a CNN network.
 
@@ -35,16 +36,19 @@ def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1
             max_pool - if True output height and width will be half sized the input size.
     '''
 
-    weights = weights_init([filter_size, filter_size, number_of_channels, number_of_filters],layer_name=layer_name,trainable=trainable)
-    biases = bias_init([number_of_filters],layer_name=layer_name,trainable=trainable)
+    weights = weights_init([filter_size, filter_size, number_of_channels, number_of_filters], layer_name=layer_name,
+                           trainable=trainable)
+    biases = bias_init([number_of_filters], layer_name=layer_name, trainable=trainable)
 
-    layer = tf.nn.conv2d(input, filter=weights, strides=[1, strides[0], strides[1], 1], padding=padding,name=layer_name+'_conv') + biases
+    layer = tf.nn.conv2d(input, filter=weights, strides=[1, strides[0], strides[1], 1], padding=padding,
+                         name=layer_name + '_conv') + biases
     if batch_norm:
-        layer = tf.keras.layers.BatchNormalization()(layer, training=isTraining)
+        layer = tf.keras.layers.BatchNormalization()(layer, training=isTraining,trainable=trainable)
     layer = activation(layer)
 
     if max_pool:
-        layer = tf.nn.max_pool(layer, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME',name=layer_name+'_pool')
+        layer = tf.nn.max_pool(layer, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME',
+                               name=layer_name + '_pool')
 
     return layer
 
@@ -61,7 +65,8 @@ def flatten(layer):
     return reshaped, num_of_elements
 
 
-def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None,layer_name = '',trainable=True,isTraining=True,batch_norm=True):
+def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dropout=None, layer_name='',
+                    trainable=True, isTraining=True, batch_norm=True):
     '''
     This function is used to create single fully connected layer in a network.
 
@@ -72,18 +77,38 @@ def fully_connected(input, input_shape, output_shape, activation=tf.nn.relu, dro
             dropout - if this is NOT None but some number, we are going to, randomly, turn off neurons in this layer.
     '''
 
-    weights = weights_init([input_shape, output_shape],layer_name=layer_name,trainable=trainable)
-    biases = bias_init([output_shape],layer_name=layer_name,trainable=trainable)
+    weights = weights_init([input_shape, output_shape], layer_name=layer_name, trainable=trainable)
+    biases = bias_init([output_shape], layer_name=layer_name, trainable=trainable)
 
     layer = tf.matmul(input, weights) + biases
 
     if batch_norm:
-        layer = tf.layers.batch_normalization(layer,training=isTraining)
+        layer = tf.layers.batch_normalization(layer, training=isTraining)
 
     if activation != None:
         layer = activation(layer)
 
     if dropout != None:
-        layer = tf.layers.dropout(layer, dropout,training=isTraining)
+        layer = tf.layers.dropout(layer, dropout, training=isTraining)
+
+    return layer
+
+
+def add_deconvolutional_layer(input,kernel_size,no_channels,no_filters,scale, name,trainable=True):
+    weights_var = weights_init([kernel_size, kernel_size, no_channels, no_filters], layer_name=name,
+                           trainable=trainable)
+    bias_var = bias_init([no_filters], layer_name=name, trainable=trainable)
+
+    dyn_input_shape = tf.shape(input)
+    N = dyn_input_shape[0]
+    H = dyn_input_shape[1]
+    W = dyn_input_shape[2]
+
+    shape_output = tf.stack([N,
+                             scale * (H - 1) + scale * 2 - scale,
+                             scale * (W - 1) + scale * 2 - scale,
+                             no_filters])
+    deconv = tf.nn.conv2d_transpose(input, weights_var, shape_output, [1, scale, scale, 1])
+    layer = tf.nn.bias_add(deconv, bias_var)
 
     return layer

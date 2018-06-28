@@ -6,15 +6,13 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict, output_groundtruth
 
-BATCH_SIZE = 12
+BATCH_SIZE = 4
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
-TARGET_HEIGHT = 55
-TARGET_WIDTH = 74
 
 # decayed_learning_rate = learning_rate * decay_rate ^ (global_step / decay_steps)
 INITIAL_LEARNING_RATE = 0.00001
@@ -61,20 +59,21 @@ def train_model(continue_flag=False):
 
         vgg.build(images, isTraining=isTraining)
 
-        loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
+        loss = build_loss(scale2_op=vgg.large_output, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
-        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8', 'batch_normalization']
-        fine_tuing_layers = ['conv5_1', 'conv4_3', 'conv4_2', 'conv5_2', 'conv5_3']
+        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8', 'batch_normalization','conv5_1', 'conv4_3', 'conv4_2', 'conv5_2', 'conv5_3',]
+        fine_tuing_layers = []
 
         trainig_params = []
         tunning_params = []
 
         for W in tf.trainable_variables():
             print(W.name)
-            if "batch_normalization" not in W.name:
+            if "batch_normalization" not in W.name or "bn_" not in W.name:
                 print('L2')
                 l2_loss += tf.nn.l2_loss(W)
+            '''
             for layer in training_layers:
                 if layer in W.name:
                     print('train')
@@ -85,7 +84,7 @@ def train_model(continue_flag=False):
                     print('tune')
                     tunning_params.append(W)
                     break
-
+            '''
         loss += 0.02 * l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
 
@@ -115,12 +114,10 @@ def train_model(continue_flag=False):
         # optimizer
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
-                                                                                      var_list=trainig_params)
-            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
-                                                                                    var_list=tunning_params)
-            optimizer = tf.group(optimizer_train, optimizer_tune)
-            # optimizer = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(loss)
+            # optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
+            # optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
+            # optimizer = tf.group(optimizer_train, optimizer_tune)
+            optimizer = tf.train.AdamOptimizer(learning_rate=1e-5).minimize(loss)
         # TODO: define model saver
 
         # Training session
@@ -216,7 +213,7 @@ def train_model(continue_flag=False):
 
 
 def main(argv=None):
-    train_model()
+    train_model(continue_flag=True)
 
 
 if __name__ == '__main__':
