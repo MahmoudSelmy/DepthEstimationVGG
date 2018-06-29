@@ -42,7 +42,7 @@ def train_model(continue_flag=False):
         with tf.device('/cpu:0'):
             batch_generator = BatchGenerator(batch_size=BATCH_SIZE)
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
-            train_images, train_depths, train_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE,
+            train_images, train_depths, train_pixels_mask, names = batch_generator.csv_inputs(TRAIN_FILE,
                                                                                               batch_size=BATCH_SIZE)
             test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE, batch_size=16)
         '''
@@ -69,7 +69,10 @@ def train_model(continue_flag=False):
 
         trainig_params = []
         tunning_params = []
-
+        global_params = []
+        for v in tf.global_variables():
+            global_params.append(v.name)
+        print(global_params)
         for W in tf.trainable_variables():
             print(W.name)
             if "batch_normalization" not in W.name:
@@ -144,7 +147,7 @@ def train_model(continue_flag=False):
             # Saver
             # dictionary to each scale to define to seprate collections
 
-            learnable_params = tf.trainable_variables()
+            learnable_params = tf.global_variables()
             not_saved_params = ['batch_normalization_3/gamma:0', 'batch_normalization_4/gamma:0',
                                 'batch_normalization_5/gamma:0', 'batch_normalization_3/beta:0',
                                 'batch_normalization_4/beta:0', 'batch_normalization_5/beta:0']

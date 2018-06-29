@@ -40,7 +40,7 @@ def conv2d(input, filter_size, number_of_channels, number_of_filters, strides=(1
 
     layer = tf.nn.conv2d(input, filter=weights, strides=[1, strides[0], strides[1], 1], padding=padding,name=layer_name+'_conv') + biases
     if batch_norm:
-        layer = tf.layers.batch_normalization(layer,training=False,trainable=False)
+        layer = tf.layers.batch_normalization(layer,training=isTraining)
     layer = activation(layer)
 
     if max_pool:
