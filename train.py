@@ -9,7 +9,7 @@ from Utills import output_predict, output_groundtruth
 BATCH_SIZE = 12
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
-EPOCHS = 1
+EPOCHS = 2000
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
@@ -23,7 +23,7 @@ MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
 NUM_EPOCHS_PER_DECAY = 30
 
-no_iterations =1
+no_iterations = 20000 // BATCH_SIZE + 1
 
 Weights_DIR = 'Weights'
 SCALE2_DIR = 'Scale2'
@@ -116,13 +116,13 @@ def train_model(continue_flag=False):
             staircase=True)
 
         # optimizer
-        optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
+        #optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            # optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
-            # optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
-            # optimizer = tf.group(optimizer_train, optimizer_tune)
-            step = optimizer.minimize(loss)
+            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
+            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
+            optimizer = tf.group(optimizer_train, optimizer_tune)
+            # step = optimizer.minimize(loss)
         # TODO: define model saver
 
         # Training session
@@ -182,7 +182,7 @@ def train_model(continue_flag=False):
 
                     batch_images, ground_truth, batch_masks = sess.run([train_images, train_depths, train_pixels_mask])
 
-                    _, loss_value, out_depth, train_summary = sess.run([step, loss, vgg.outputdepth, loss_summary]
+                    _, loss_value, out_depth, train_summary = sess.run([optimizer, loss, vgg.outputdepth, loss_summary]
                                                                        , feed_dict={images: batch_images,
                                                                                     depths: ground_truth,
                                                                                     pixels_masks: batch_masks,
@@ -218,7 +218,7 @@ def train_model(continue_flag=False):
 
 
 def main(argv=None):
-    train_model(continue_flag=True)
+    train_model()
 
 
 if __name__ == '__main__':
