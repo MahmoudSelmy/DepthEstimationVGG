@@ -50,18 +50,20 @@ class Vgg16Model:
                                    reuse=False, batch_norm=True)
         print(self.conv5_3.shape)
         self.up_sample = tf.keras.layers.UpSampling2D(size=(3, 3), input_shape=(1, 14, 14))(self.conv5_3)
-
+        print(self.up_sample.shape)
         self.pad = tf.keras.layers.ZeroPadding2D(padding=((4, 4), (4, 4)))(self.up_sample)
-
+        print(self.pad.shape)
         self.pred_conv = helper.conv2d(input=self.pad, filter_size=3, number_of_channels=512, number_of_filters=512,
                                        padding='SAME',
                                        max_pool=False, layer_name='conv_Pred', batch_norm=False, isTraining=trainable,
                                        trainable=trainable)
+        print(self.pred_conv.shape)
         self.pred_conv2 = helper.conv2d(input=self.pred_conv, filter_size=3, number_of_channels=512,
                                         number_of_filters=1,
                                         padding='VALID',
                                         max_pool=False, layer_name='conv_Pred2', batch_norm=False,
                                         isTraining=trainable, trainable=trainable)
+        print(self.pred_conv2.shape)
         self.outputdepth = tf.layers.max_pooling2d(self.pred_conv2, (2, 2), (2, 2), padding=self.pool_padding)
 
         # =========================== Scale 2 =========================================================
@@ -74,7 +76,7 @@ class Vgg16Model:
                                           max_pool=False, layer_name='conv_branch1', batch_norm=False,
                                           isTraining=isTraining, trainable=True)
         self.deconv_branch1 = helper.add_deconvolutional_layer(self.conv_branch1, name='deconv_branch1', kernel_size=1,
-                                                               no_channels=32, no_filters=32, scale=scale)
+                                                               no_channels=16, no_filters=16, scale=scale)
         # Branch2
         scale *= 2
         self.pred3 = tf.layers.batch_normalization(self.conv3_3, training=isTraining, name='bn_branch2')
@@ -84,7 +86,7 @@ class Vgg16Model:
                                           max_pool=False, layer_name='conv_branch2', batch_norm=False,
                                           isTraining=isTraining, trainable=True)
         self.deconv_branch2 = helper.add_deconvolutional_layer(self.conv_branch2, name='deconv_branch2',
-                                                               kernel_size=2 * scale, no_channels=32, no_filters=32,
+                                                               kernel_size=2 * scale, no_channels=16, no_filters=16,
                                                                scale=scale)
         # Branch3
         scale *= 2
@@ -94,7 +96,7 @@ class Vgg16Model:
                                           max_pool=False, layer_name='conv_branch3', batch_norm=False,
                                           isTraining=isTraining, trainable=True)
         self.deconv_branch3 = helper.add_deconvolutional_layer(self.conv_branch3, name='deconv_branch3',
-                                                               kernel_size=2 * scale, no_channels=64, no_filters=64,
+                                                               kernel_size=2 * scale, no_channels=32, no_filters=32,
                                                                scale=scale)
         # Branch4
         scale *= 2
@@ -104,23 +106,31 @@ class Vgg16Model:
                                           max_pool=False, layer_name='conv_branch4', batch_norm=False,
                                           isTraining=isTraining, trainable=True)
         self.deconv_branch4 = helper.add_deconvolutional_layer(self.conv_branch4, name='deconv_branch4',
-                                                               kernel_size=2 * scale, no_channels=64, no_filters=64,
+                                                               kernel_size=2 * scale, no_channels=32, no_filters=32,
                                                                scale=scale)
         # Branch5
-
-        self.conv_branch5 = helper.conv2d(input=self.pred_conv, filter_size=3, number_of_channels=512,
+        self.depth_pad = tf.keras.layers.ZeroPadding2D(padding=((4, 4), (4, 4)))(self.pred_conv2)
+        print(self.depth_pad.shape)
+        self.conv_branch5_1 = helper.conv2d(input=self.depth_pad, filter_size=3, number_of_channels=1,
                                           number_of_filters=32,
                                           padding='SAME',
-                                          max_pool=False, layer_name='conv_branch5', batch_norm=False,
+                                          max_pool=False, layer_name='conv_branch5_1', batch_norm=False,
                                           isTraining=isTraining, trainable=True)
-        self.deconv_branch5 = helper.add_deconvolutional_layer(self.conv_branch4, name='deconv_branch5', kernel_size=18,
-                                                               no_channels=64, no_filters=64, scale=2)
+        print(self.conv_branch5_1.shape)
+        self.conv_branch5_2 = helper.conv2d(input=self.conv_branch5_1, filter_size=3, number_of_channels=32,
+                                          number_of_filters=32,
+                                          padding='SAME',
+                                          max_pool=False, layer_name='conv_branch5_2', batch_norm=False,
+                                          isTraining=isTraining, trainable=True)
+        print(self.conv_branch5_2.shape)
+        self.deconv_branch5 = helper.add_deconvolutional_layer(self.conv_branch5_2, name='deconv_branch5', kernel_size=18,
+                                                               no_channels=32, no_filters=32, scale=2)
 
         self.featues_stack = tf.concat(
             [self.deconv_branch1, self.deconv_branch2, self.deconv_branch3, self.deconv_branch4, self.deconv_branch5],
             axis=3)
 
-        self.large_output = helper.conv2d(input=self.featues_stack, filter_size=3, number_of_channels=256,
+        self.large_output = helper.conv2d(input=self.featues_stack, filter_size=3, number_of_channels=128,
                                           number_of_filters=1,
                                           padding='SAME',
                                           max_pool=False, layer_name='conv_branch5', batch_norm=False,
@@ -145,7 +155,7 @@ class Vgg16Model:
             layer = helper.conv2d(input=layer, filter_size=k_size, number_of_channels=n_channel,
                                   number_of_filters=n_filters,
                                   padding=self.conv_padding,
-                                  max_pool=False, layer_name=name, batch_norm=batch_norm, isTraining=isTraining)
+                                  max_pool=False, layer_name=name, batch_norm=batch_norm, isTraining=isTraining,trainable=trainable)
         return layer
 
     def fc(self, layer, name, size, trainable=True, reuse=True, input_size=1024, isTraining=True, dropout=None,

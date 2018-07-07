@@ -44,7 +44,7 @@ def train_model(continue_flag=False):
             # train_images, train_depths, train_pixels_mask = batch_generator.csv_inputs(TRAIN_FILE)
             train_images, train_depths, train_pixels_mask, names = batch_generator.csv_inputs(TRAIN_FILE,
                                                                                               batch_size=BATCH_SIZE)
-            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE, batch_size=16)
+            test_images, test_depths, test_pixels_mask, names = batch_generator.csv_inputs(TEST_FILE, batch_size=BATCH_SIZE)
         '''
         # placeholders
             training_images = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 3], name="training_images")
@@ -56,38 +56,48 @@ def train_model(continue_flag=False):
         vgg = Vgg16Model()
         isTraining = tf.placeholder(tf.bool)
         images = tf.placeholder(tf.float32, [None, 224, 224, 3])
-        depths = tf.placeholder(tf.float32, [None, 24, 24, 1])
-        pixels_masks = tf.placeholder(tf.float32, [None, 24, 24, 1])
+        depths = tf.placeholder(tf.float32, [None, 112, 112, 1])
+        pixels_masks = tf.placeholder(tf.float32, [None, 112, 112, 1])
 
         vgg.build(images, isTraining=isTraining)
 
-        loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
+        loss = build_loss(scale2_op=vgg.large_output, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
+        '''
         training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8', 'batch_normalization']
         fine_tuing_layers = ['conv5_1', 'conv4_3', 'conv4_2', 'conv5_2', 'conv5_3']
+        '''
+        saved_params = ['conv1_1', 'conv1_2',
+                        'conv2_1', 'conv2_2',
+                        'conv3_1', 'conv3_2', 'conv3_3',
+                        'conv4_1', 'conv4_2','conv4_3',
+                        'conv5_1','conv5_2', 'conv5_3',
+                        'batch_normalization', 'batch_normalization_1',
+                        'conv_Pred_B', 'conv_Pred_W', 'conv_Pred2_B', 'conv_Pred2_W']
 
         trainig_params = []
-        tunning_params = []
-        global_params = []
+        print_params = []
+        saved_params_variables = []
+
         for v in tf.global_variables():
-            global_params.append(v.name)
-        print(global_params)
-        for W in tf.trainable_variables():
-            print(W.name)
-            if "batch_normalization" not in W.name:
-                print('L2')
-                l2_loss += tf.nn.l2_loss(W)
-            for layer in training_layers:
-                if layer in W.name:
-                    print('train')
-                    trainig_params.append(W)
-                    break
-            for layer in fine_tuing_layers:
-                if layer in W.name:
-                    print('tune')
-                    tunning_params.append(W)
-                    break
+
+            if 'global' in v.name:
+                continue
+            saved = False
+            for saved_layer in saved_params:
+                if saved_layer in v.name:
+                    saved_params_variables.append(v)
+                    saved = True
+                    continue
+            if not saved:
+
+                trainig_params.append(v)
+                if 'bn_' not in v.name:
+                    l2_loss += tf.nn.l2_loss(v)
+                    print_params.append(v.name)
+                # print(v.name)
+        print(print_params)
 
         loss += 0.02 * l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
@@ -107,23 +117,23 @@ def train_model(continue_flag=False):
             5 * no_iterations,
             0.1,
             staircase=True)
-
+        '''
         lr_tune = tf.train.exponential_decay(
             1e-5,
             global_step,
             5 * no_iterations,
             0.1,
             staircase=True)
-
+        '''
         # optimizer
         # optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
-                                                                                      var_list=trainig_params)
-            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
-                                                                                    var_list=tunning_params)
-            optimizer = tf.group(optimizer_train, optimizer_tune)
+            # optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
+            # optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
+            # optimizer = tf.group(optimizer_train, optimizer_tune)
+            optimizer = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step)
+
             # step = optimizer.minimize(loss)
         # TODO: define model saver
 
@@ -149,20 +159,13 @@ def train_model(continue_flag=False):
             # Saver
             # dictionary to each scale to define to seprate collections
 
-            learnable_params = tf.global_variables()
-            not_saved_params = ['batch_normalization_3/gamma:0', 'batch_normalization_4/gamma:0',
-                                'batch_normalization_5/gamma:0', 'batch_normalization_3/beta:0',
-                                'batch_normalization_4/beta:0', 'batch_normalization_5/beta:0']
+            learnable_params = tf.trainable_variables()
 
-            saved_params = []
-            for v in learnable_params:
-                if 'batch_normalization' not in v.name:
-                    saved_params.append(v)
             # add variables to it's corresponding dictionary
 
             # define savers
             saver_learnable = tf.train.Saver(learnable_params, max_to_keep=4)
-            saver_saved = tf.train.Saver(saved_params, max_to_keep=4)
+            saver_saved = tf.train.Saver(saved_params_variables, max_to_keep=4)
             # restore params if we need to continue on the previous training
             if continue_flag:
                 weights_ckpt = tf.train.get_checkpoint_state(Weights_DIR)
@@ -190,7 +193,7 @@ def train_model(continue_flag=False):
                                                      isTraining: True})
 
                     if i % 10 == 0:
-                        loss_value, out_depth, train_summary = sess.run([loss, vgg.outputdepth, loss_summary]
+                        loss_value, out_depth, train_summary = sess.run([loss, vgg.large_output, loss_summary]
                                                                         , feed_dict={images: batch_images,
                                                                                      depths: ground_truth,
                                                                                      pixels_masks: batch_masks,
@@ -199,7 +202,7 @@ def train_model(continue_flag=False):
 
                         batch_images_test, ground_truth_test, batch_masks_test = sess.run(
                             [test_images, test_depths, test_pixels_mask])
-                        validation_loss, test_summary, out_depth_test = sess.run([loss, loss_summary, vgg.outputdepth],
+                        validation_loss, test_summary, out_depth_test = sess.run([loss, loss_summary, vgg.large_output],
                                                                                  feed_dict={images: batch_images_test,
                                                                                             depths: ground_truth_test,
                                                                                             pixels_masks: batch_masks_test,
@@ -225,7 +228,7 @@ def train_model(continue_flag=False):
 
 
 def main(argv=None):
-    train_model()
+    train_model(continue_flag=True)
 
 
 if __name__ == '__main__':
