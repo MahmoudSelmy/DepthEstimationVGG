@@ -116,11 +116,13 @@ def train_model(continue_flag=False):
             staircase=True)
 
         # optimizer
-        #optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
+        # optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
-            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
+            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
+                                                                                      var_list=trainig_params)
+            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
+                                                                                    var_list=tunning_params)
             optimizer = tf.group(optimizer_train, optimizer_tune)
             # step = optimizer.minimize(loss)
         # TODO: define model saver
@@ -182,14 +184,19 @@ def train_model(continue_flag=False):
 
                     batch_images, ground_truth, batch_masks = sess.run([train_images, train_depths, train_pixels_mask])
 
-                    _, loss_value, out_depth, train_summary = sess.run([optimizer, loss, vgg.outputdepth, loss_summary]
-                                                                       , feed_dict={images: batch_images,
-                                                                                    depths: ground_truth,
-                                                                                    pixels_masks: batch_masks,
-                                                                                    isTraining: True})
-                    writer_train.add_summary(train_summary, epoch * no_iterations + i)
+                    sess.run([optimizer], feed_dict={images: batch_images,
+                                                     depths: ground_truth,
+                                                     pixels_masks: batch_masks,
+                                                     isTraining: True})
 
                     if i % 10 == 0:
+                        loss_value, out_depth, train_summary = sess.run([loss, vgg.outputdepth, loss_summary]
+                                                                        , feed_dict={images: batch_images,
+                                                                                     depths: ground_truth,
+                                                                                     pixels_masks: batch_masks,
+                                                                                     isTraining: True})
+                        writer_train.add_summary(train_summary, epoch * no_iterations + i)
+
                         batch_images_test, ground_truth_test, batch_masks_test = sess.run(
                             [test_images, test_depths, test_pixels_mask])
                         validation_loss, test_summary, out_depth_test = sess.run([loss, loss_summary, vgg.outputdepth],
@@ -202,7 +209,7 @@ def train_model(continue_flag=False):
                     if i % 10 == 0:
                         # log.info('step' + loss_value)
                         print("%s: %d[epoch]: %d[iteration]: train loss %f : valid loss %f " % (
-                        datetime.now(), epoch, i, loss_value, validation_loss))
+                            datetime.now(), epoch, i, loss_value, validation_loss))
 
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
                     if i % 500 == 0:
