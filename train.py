@@ -6,13 +6,15 @@ from DepthLoss import build_loss
 from vgg16 import Vgg16Model
 from Utills import output_predict, output_groundtruth
 
-BATCH_SIZE = 4
+BATCH_SIZE = 12
 TRAIN_FILE = "train.csv"
 TEST_FILE = "test.csv"
 EPOCHS = 2000
 
 IMAGE_HEIGHT = 224
 IMAGE_WIDTH = 224
+TARGET_HEIGHT = 55
+TARGET_WIDTH = 74
 
 # decayed_learning_rate = learning_rate * decay_rate ^ (global_step / decay_steps)
 INITIAL_LEARNING_RATE = 0.00001
@@ -21,7 +23,7 @@ MOVING_AVERAGE_DECAY = 0.999999
 NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN = 500
 NUM_EPOCHS_PER_DECAY = 30
 
-no_iterations = 21100 // BATCH_SIZE + 1
+no_iterations = 20000 // BATCH_SIZE + 1
 
 Weights_DIR = 'Weights'
 SCALE2_DIR = 'Scale2'
@@ -59,21 +61,23 @@ def train_model(continue_flag=False):
 
         vgg.build(images, isTraining=isTraining)
 
-        loss = build_loss(scale2_op=vgg.large_output, depths=depths, pixels_mask=pixels_masks)
+        loss = build_loss(scale2_op=vgg.outputdepth, depths=depths, pixels_mask=pixels_masks)
 
         l2_loss = 0
-        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8', 'batch_normalization','conv5_1', 'conv4_3', 'conv4_2', 'conv5_2', 'conv5_3',]
-        fine_tuing_layers = []
+        training_layers = ['conv_Pred', 'fc6', 'fc7', 'fc8', 'batch_normalization']
+        fine_tuing_layers = ['conv5_1', 'conv4_3', 'conv4_2', 'conv5_2', 'conv5_3']
 
         trainig_params = []
         tunning_params = []
-
+        global_params = []
+        for v in tf.global_variables():
+            global_params.append(v.name)
+        print(global_params)
         for W in tf.trainable_variables():
             print(W.name)
-            if "batch_normalization" not in W.name or "bn_" not in W.name:
+            if "batch_normalization" not in W.name:
                 print('L2')
                 l2_loss += tf.nn.l2_loss(W)
-            '''
             for layer in training_layers:
                 if layer in W.name:
                     print('train')
@@ -84,7 +88,7 @@ def train_model(continue_flag=False):
                     print('tune')
                     tunning_params.append(W)
                     break
-            '''
+
         loss += 0.02 * l2_loss
         loss_summary = tf.summary.scalar("Loss", loss)
 
@@ -112,12 +116,15 @@ def train_model(continue_flag=False):
             staircase=True)
 
         # optimizer
+        # optimizer = tf.train.AdamOptimizer(learning_rate=1e-5)
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
-            # optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,var_list=trainig_params)
-            # optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,var_list=tunning_params)
-            # optimizer = tf.group(optimizer_train, optimizer_tune)
-            optimizer = tf.train.AdamOptimizer(learning_rate=1e-5).minimize(loss)
+            optimizer_train = tf.train.AdamOptimizer(learning_rate=lr_train).minimize(loss, global_step=global_step,
+                                                                                      var_list=trainig_params)
+            optimizer_tune = tf.train.AdamOptimizer(learning_rate=lr_tune).minimize(loss, global_step=global_step,
+                                                                                    var_list=tunning_params)
+            optimizer = tf.group(optimizer_train, optimizer_tune)
+            # step = optimizer.minimize(loss)
         # TODO: define model saver
 
         # Training session
@@ -142,7 +149,7 @@ def train_model(continue_flag=False):
             # Saver
             # dictionary to each scale to define to seprate collections
 
-            learnable_params = tf.trainable_variables()
+            learnable_params = tf.global_variables()
             not_saved_params = ['batch_normalization_3/gamma:0', 'batch_normalization_4/gamma:0',
                                 'batch_normalization_5/gamma:0', 'batch_normalization_3/beta:0',
                                 'batch_normalization_4/beta:0', 'batch_normalization_5/beta:0']
@@ -177,14 +184,19 @@ def train_model(continue_flag=False):
 
                     batch_images, ground_truth, batch_masks = sess.run([train_images, train_depths, train_pixels_mask])
 
-                    _, loss_value, out_depth, train_summary = sess.run([optimizer, loss, vgg.outputdepth, loss_summary]
-                                                                       , feed_dict={images: batch_images,
-                                                                                    depths: ground_truth,
-                                                                                    pixels_masks: batch_masks,
-                                                                                    isTraining: True})
-                    writer_train.add_summary(train_summary, epoch * no_iterations + i)
+                    sess.run([optimizer], feed_dict={images: batch_images,
+                                                     depths: ground_truth,
+                                                     pixels_masks: batch_masks,
+                                                     isTraining: True})
 
                     if i % 10 == 0:
+                        loss_value, out_depth, train_summary = sess.run([loss, vgg.outputdepth, loss_summary]
+                                                                        , feed_dict={images: batch_images,
+                                                                                     depths: ground_truth,
+                                                                                     pixels_masks: batch_masks,
+                                                                                     isTraining: True})
+                        writer_train.add_summary(train_summary, epoch * no_iterations + i)
+
                         batch_images_test, ground_truth_test, batch_masks_test = sess.run(
                             [test_images, test_depths, test_pixels_mask])
                         validation_loss, test_summary, out_depth_test = sess.run([loss, loss_summary, vgg.outputdepth],
@@ -197,7 +209,7 @@ def train_model(continue_flag=False):
                     if i % 10 == 0:
                         # log.info('step' + loss_value)
                         print("%s: %d[epoch]: %d[iteration]: train loss %f : valid loss %f " % (
-                        datetime.now(), epoch, i, loss_value, validation_loss))
+                            datetime.now(), epoch, i, loss_value, validation_loss))
 
                     # print("%s: %d[epoch]: %d[iteration]: train loss %f" % (datetime.now(), epoch, i, loss_value))
                     if i % 500 == 0:
@@ -213,7 +225,7 @@ def train_model(continue_flag=False):
 
 
 def main(argv=None):
-    train_model(continue_flag=True)
+    train_model()
 
 
 if __name__ == '__main__':
